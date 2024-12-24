@@ -1,7 +1,7 @@
 # Game Boy RLE Compression from Aseprite
  Turn Aseprite files into a run length encoding compressed .inc file using Aseprite's scripting feature
  
- Actual conversion from Aseprite to Game Boy data is done using boombuler's gbexport script
+ Actual conversion from Aseprite to Game Boy data is done using boombuler's gbexport script, which allows for both tiles and tile maps
  
  This can be found at https://github.com/boombuler/aseprite-gbexport
  
