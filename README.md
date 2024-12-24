@@ -2,6 +2,7 @@
  Turn Aseprite files into a run length encoding compressed .inc file using Aseprite's scripting feature
  
  Actual conversion from Aseprite to Game Boy data is done using boombuler's gbexport script
+ 
  This can be found at https://github.com/boombuler/aseprite-gbexport
  
  I've modified the code to output as a binary file that is then compressed using RLE
