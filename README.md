@@ -7,7 +7,7 @@
  
  I've modified the code to output as a binary file that is then compressed using RLE
  
- I use WLA-DX, so thta's the way it exports for now. Perhaps I'll update it for RGBDS in the future
+ I use WLA-DX, so that's's the way it exports for now. Perhaps I'll update it for RGBDS in the future
 
  I've also included the hardware.inc file from RGBDS, but updated for WLA-DX
  
