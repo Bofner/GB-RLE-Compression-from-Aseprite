@@ -65,7 +65,7 @@ end
 local function calc_comp_size(origBinFile, origSize)
     local numRuns = 0
     local runLength = 0
-    local prevByte = string.byte(origBinFile, 1)
+    local prevByte = string.byte(origBinFile, 0)
 
     for i = 1, origSize do
         local currentByte = string.byte(origBinFile, i)
@@ -87,7 +87,7 @@ end
 local function BSRLE_Compression(origBinFile, incFile, origSize)
     local runsPerLine = 0
     local runLength = 1
-    local prevByte = string.byte(origBinFile, 1)
+    local prevByte = string.byte(origBinFile, 0)
     incFile:write("\n.DW ")
 
     for i = 1, origSize do
@@ -285,10 +285,10 @@ if data.ok then
                 for x = 1, #frameMap do          
                     if mapBinary ~= nil then
                         --Concatenate the map data
-                        mapBinary = mapBinary .. string.char(frameMap[x][y])
+                        mapBinary = mapBinary .. string.char(frameMap[x][y] - 1)
                     else
                         --The start of the binary  
-                        mapBinary = string.char(frameMap[x][y])
+                        mapBinary = string.char(frameMap[x][y] - 1)
                     end
                 end
             end
