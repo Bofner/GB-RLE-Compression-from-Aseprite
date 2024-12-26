@@ -177,9 +177,9 @@ local function exportFrame(useLookup, frm, binaryValueNotPointer)
     local result = {}
 
 
-    for x = 0, sprite.width-1, 8 do
-        local column = {}
-        for y = 0, sprite.height-1, 8 do
+    for y = 0, sprite.height-1, 8 do
+        local row = {}
+        for x = 0, sprite.width-1, 8 do
             local data = getTileData(img, x, y)
             local id = 0
             if useLookup then
@@ -196,7 +196,7 @@ local function exportFrame(useLookup, frm, binaryValueNotPointer)
                 id = lastLookupId + 1
                 lastLookupId = id
             end
-            table.insert(column, id)
+            table.insert(row, id)
             if data ~= nil then
                 if binaryValueNotPointer.aBinaryValue ~= nil then
                     binaryValueNotPointer.aBinaryValue = binaryValueNotPointer.aBinaryValue .. data
@@ -206,7 +206,7 @@ local function exportFrame(useLookup, frm, binaryValueNotPointer)
 
             end
         end
-        table.insert(result, column)
+        table.insert(result, row)
     end
 
     return result
@@ -281,8 +281,8 @@ if data.ok then
     --Write our binary map data
     if data.exportMap then
         for frameNo, frameMap in ipairs(mapData) do 
-            for y = 1, #frameMap[1] do
-                for x = 1, #frameMap do          
+            for x = 1, #frameMap do   
+                for y = 1, #frameMap[1] do       
                     if mapBinary ~= nil then
                         --Concatenate the map data
                         mapBinary = mapBinary .. string.char(frameMap[x][y] - 1)
