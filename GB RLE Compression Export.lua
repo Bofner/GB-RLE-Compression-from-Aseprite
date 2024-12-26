@@ -65,7 +65,7 @@ end
 local function calc_comp_size(origBinFile, origSize)
     local numRuns = 0
     local runLength = 0
-    local prevByte = string.byte(origBinFile, 0)
+    local prevByte = string.byte(origBinFile, 1)
 
     for i = 1, origSize do
         local currentByte = string.byte(origBinFile, i)
@@ -87,8 +87,8 @@ end
 local function BSRLE_Compression(origBinFile, incFile, origSize)
     local runsPerLine = 0
     local runLength = 1
-    local prevByte = string.byte(origBinFile, 0)
-    incFile:write("\n.DW ")
+    local prevByte = string.byte(origBinFile, 1)
+    incFile:write(".DW ")
 
     for i = 1, origSize do
         local currentByte = string.byte(origBinFile, i)
@@ -97,12 +97,14 @@ local function BSRLE_Compression(origBinFile, incFile, origSize)
                 incFile:write("\n.DW ")
                 runsPerLine = 0
             end
-            incFile:write(string.format("$%02X%s ", runLength, prevByte))
+            incFile:write(string.format("$%02X", runLength))
+            incFile:write(string.format("%02X ", prevByte))
             runsPerLine = runsPerLine + 1
             runLength = 1
             prevByte = currentByte
         elseif runLength >= 255 then
-            incFile:write(string.format("$%02X%s ", runLength, prevByte))
+            incFile:write(string.format("$%02X", runLength))
+            incFile:write(string.format("%02X ", prevByte))
             runsPerLine = runsPerLine + 1
             runLength = 1
         else
@@ -319,6 +321,7 @@ if data.ok then
         print("File compression not efficient. Raw data with appropriate header copied instead.")
     else
         incFile:write(".DB %10001111")
+        incFile:write(";Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).")
         BSRLE_Compression(tileBinary, incFile, #tileBinary)
         print("File compressed from " .. #tileBinary .. " bytes to " .. compFileSize .. " bytes.")
     end
@@ -361,7 +364,9 @@ if data.ok then
             no_compression(mapBinary, incMapFile, #mapBinary)
             print("File compression not efficient. Raw data with appropriate header copied instead.")
         else
+
             incMapFile:write(".DB " .. header)
+            incMapFile:write("\n;Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).\n")
             BSRLE_Compression(mapBinary, incMapFile, #mapBinary)
             print("File compressed from " .. #mapBinary .. " bytes to " .. compMapSize .. " bytes.")
         end
