@@ -9,7 +9,6 @@ local MAP = 0
 local spriteFullPath
 local spriteFileName
 
-
 -- Check constrains
 if sprite == nil then
   app.alert("No Sprite...")
@@ -64,17 +63,12 @@ end
 
 -- Calculate compressed size
 local function calc_comp_size(origBinFile, origSize)
-    local file = io.open(origBinFile, "rb")
-    if not file then
-        return nil
-    end
-
     local numRuns = 0
     local runLength = 0
-    local prevByte = file:read(1)
+    local prevByte = string.byte(origBinFile, 1)
 
-    for _ = 1, origSize do
-        local currentByte = file:read(1)
+    for i = 1, origSize do
+        local currentByte = string.byte(origBinFile, i)
         if not currentByte or currentByte ~= prevByte then
             numRuns = numRuns + 1
             prevByte = currentByte
@@ -86,35 +80,29 @@ local function calc_comp_size(origBinFile, origSize)
         end
     end
 
-    file:close()
     return (numRuns * 2) + 2
 end
 
 -- Perform BSRLE compression
 local function BSRLE_Compression(origBinFile, incFile, origSize)
-    local file = io.open(origBinFile, "rb")
-    if not file then
-        return false
-    end
-
     local runsPerLine = 0
     local runLength = 1
-    local prevByte = file:read(1)
-    incFile:write(".DW ")
+    local prevByte = string.byte(origBinFile, 1)
+    incFile:write("\n.DW ")
 
-    for _ = 1, origSize do
-        local currentByte = file:read(1)
+    for i = 1, origSize do
+        local currentByte = string.byte(origBinFile, i)
         if not currentByte or currentByte ~= prevByte then
             if runsPerLine >= 16 then
                 incFile:write("\n.DW ")
                 runsPerLine = 0
             end
-            incFile:write(string.format("$%02X%s ", runLength, prevByte:byte()))
+            incFile:write(string.format("$%02X%s ", runLength, prevByte))
             runsPerLine = runsPerLine + 1
             runLength = 1
             prevByte = currentByte
         elseif runLength >= 255 then
-            incFile:write(string.format("$%02X%s ", runLength, prevByte:byte()))
+            incFile:write(string.format("$%02X%s ", runLength, prevByte))
             runsPerLine = runsPerLine + 1
             runLength = 1
         else
@@ -124,33 +112,26 @@ local function BSRLE_Compression(origBinFile, incFile, origSize)
 
     incFile:write("\n;Terminator word is $0000 since we can't have a run length of length 0.\n")
     incFile:write(".DW $0000\n")
-    file:close()
     return true
 end
 
 -- Handle uncompressed data
-local function no_compression(origBinFile, incFile, origSize)
-    local file = io.open(origBinFile, "rb")
-    if not file then
-        return false
-    end
-
+local function no_compression(origBinary, incFile, origSize)
     incFile:write("\n;Size of uncompressed tile data:\n")
     incFile:write(string.format(".DW $%04X\n", origSize))
     incFile:write(";Raw tile data \n.DB ")
 
     local bytesPerLine = 0
-    for _ = 1, origSize do
-        local currentByte = file:read(1)
+    for i = 1, origSize do
+        local currentByte = string.byte(origBinary, i)
         if bytesPerLine >= 16 then
             incFile:write("\n.DB ")
             bytesPerLine = 0
         end
-        incFile:write(string.format("$%02X ", currentByte:byte()))
+        incFile:write(string.format("$%02X ", currentByte))
         bytesPerLine = bytesPerLine + 1
     end
 
-    file:close()
     return true
 end
 
@@ -185,7 +166,7 @@ end
 local spriteLookup = {}
 local lastLookupId = 0
 
-local function exportFrame(useLookup, frm)
+local function exportFrame(useLookup, frm, binaryValueNotPointer)
     if frm == nil then
         frm = 1
     end
@@ -194,6 +175,7 @@ local function exportFrame(useLookup, frm)
     img:drawSprite(sprite, frm)
 
     local result = {}
+
 
     for x = 0, sprite.width-1, 8 do
         local column = {}
@@ -216,7 +198,12 @@ local function exportFrame(useLookup, frm)
             end
             table.insert(column, id)
             if data ~= nil then
-                io.write(data)
+                if binaryValueNotPointer.aBinaryValue ~= nil then
+                    binaryValueNotPointer.aBinaryValue = binaryValueNotPointer.aBinaryValue .. data
+                else
+                    binaryValueNotPointer.aBinaryValue = data
+                end
+
             end
         end
         table.insert(result, column)
@@ -246,15 +233,15 @@ dlg:file{ id="exportFile",
           title="Gameboy-Assembler Export",
           open=false,
           save=true,
-          filename= spriteFilePath .. "Tiles.bin",
-          filetypes={"bin"}}
+          filename= spriteFilePath .. "Tiles.inc",
+          filetypes={"inc"}}
 dlg:file{ id="mapFile",
           label="Tile-Map-File",
           title="Gameboy-Assembler Export",
           open=false,
           save=true,
-          filename= spriteFilePath .. "Map.bin",
-          filetypes={"bin"}}
+          filename= spriteFilePath .. "Map.inc",
+          filetypes={"inc"}}
 
 dlg:check{ id="onlyCurrentFrame",
            text="Export only current frame",
@@ -270,52 +257,47 @@ dlg:button{ id="ok", text="OK" }
 dlg:button{ id="cancel", text="Cancel" }
 dlg:show()
 local data = dlg.data
+local notPointer = {aBinaryValue}
+local tileBinary
+local mapBinary
 if data.ok then
-    --Make the tile file
-    local f = io.open(data.exportFile, "w")
-    io.output(f)
 
+    --Write our binary tile data and set up the map
     local mapData = {}
-
     if data.onlyCurrentFrame then
-        table.insert(mapData, exportFrame(data.removeDuplicates, app.activeFrame))
+        table.insert(mapData, exportFrame(data.removeDuplicates, app.activeFrame, notPointer))
     else
         for i = 1,#sprite.frames do
-            io.write(string.format(";Frame %d\n", i))
-            table.insert(mapData, exportFrame(data.removeDuplicates, i))
+            table.insert(mapData, exportFrame(data.removeDuplicates, i, tileBinary))
         end
     end
+    --Load our binary tile data
+    tileBinary = notPointer.aBinaryValue
+    if tileBinary == nil then
+        return
+    end
 
-    io.close(f)
 
+    --Write our binary map data
     if data.exportMap then
-        local mf = io.open(data.mapFile, "w")
-
-
         for frameNo, frameMap in ipairs(mapData) do 
-            if #mapData > 1 then
-                --mf:write(string.format(";Frame %d\n", frameNo))
-            end
-
             for y = 1, #frameMap[1] do
-                --mf:write(".DB ")
-                for x = 1, #frameMap do
-                    if x > 1 then
-                        --mf:write(", ")
+                for x = 1, #frameMap do          
+                    if mapBinary ~= nil then
+                        --Concatenate the map data
+                        mapBinary = mapBinary .. string.char(frameMap[x][y])
+                    else
+                        --The start of the binary  
+                        mapBinary = string.char(frameMap[x][y])
                     end
-
-                    mf:write(string.char(frameMap[x][y]))
                 end
             end
         end
-        mf:close()
     end
 
+
     --Take our binary tile data and try to compress them
-    local tileData = data.exportFile
-    local fileName, fileType = tileData:match("(.+)%.(.+)")
-    local incFile
-    incFile = io.open(fileName .. ".inc", "w")
+    local incFile = io.open(data.exportFile, "w")
     incFile:write(";Header byte follows this format:\n")
     incFile:write(";7:     1 = TILE, 0 = MAP\n")
     incFile:write(";6:     1 = Uncompressed\n")
@@ -324,32 +306,49 @@ if data.ok then
     incFile:write(";0-3: Unused but set to 1\n")
 
     --Check if compression is efficient
-    local binFileSize = get_file_size(tileData)
-    local compFileSize = calc_comp_size(tileData, binFileSize)
+    --local binFileSize = get_file_size(tileData)
+    local compFileSize = calc_comp_size(tileBinary, #tileBinary)
     if not compFileSize then
         print("Error calculating compressed size.")
         incFile:close()
         return
     end
-    if compFileSize > binFileSize then
-        incFile:write(".DB %01001111")
-        no_compression(tileData, incFile, binFileSize)
+    if compFileSize > #tileBinary then
+        incFile:write(".DB %11001111")
+        no_compression(tileBinary, incFile, #tileBinary)
         print("File compression not efficient. Raw data with appropriate header copied instead.")
     else
         incFile:write(".DB %10001111")
-        BSRLE_Compression(tileData, incFile, binFileSize)
-        print("File compressed from " .. binFileSize .. " bytes to " .. compFileSize .. " bytes.")
+        BSRLE_Compression(tileBinary, incFile, #tileBinary)
+        print("File compressed from " .. #tileBinary .. " bytes to " .. compFileSize .. " bytes.")
     end
 
     incFile:close()
     
     if data.mapFile ~= nil and data.exportMap then
+        --Check if compression is efficient
+        local compMapSize = calc_comp_size(mapBinary, #mapBinary)
+        local header
+        if not compMapSize then
+            print("Error calculating compressed size.")
+            incMapFile:close()
+            return
+        end
+        --Setup our header
+        if #mapBinary == SCRN then
+            header = "%00001111"
+        elseif #mapBinary == TALL then
+            header = "%00011111"
+        elseif #mapBinary == WIDE then
+            header = "%00101111"
+        elseif #mapBinary == FULL then
+            header = "%00111111"
+        else
+            app.alert("Canvas is an incompatible size for map data!")
+            return
+        end
         --Take our binary map data and try to compress them
-        
-        local mapDataFile = data.mapFile
-        local mapName, fileType = mapDataFile:match("(.+)%.(.+)")
-        local incMapFile
-        incMapFile = io.open(mapName .. ".inc", "w")
+        local incMapFile = io.open(data.mapFile, "w")
         incMapFile:write(";Header byte follows this format:\n")
         incMapFile:write(";7:     1 = TILE, 0 = MAP\n")
         incMapFile:write(";6:     1 = Uncompressed\n")
@@ -357,22 +356,14 @@ if data.ok then
         incMapFile:write(";       10 = WIDE, 11 = FULL\n")
         incMapFile:write(";0-3: Unused but set to 1\n")
 
-        --Check if compression is efficient
-        local binMapSize = get_file_size(mapDataFile)
-        local compMapSize = calc_comp_size(mapDataFile, binMapSize)
-        if not compMapSize then
-            print("Error calculating compressed size.")
-            incMapFile:close()
-            return
-        end
-        if compMapSize > binMapSize then
+        if compMapSize > #mapBinary then
             incMapFile:write(".DB %01001111")
-            no_compression(mapDataFile, incMapFile, binMapSize)
+            no_compression(mapBinary, incMapFile, #mapBinary)
             print("File compression not efficient. Raw data with appropriate header copied instead.")
         else
-            incMapFile:write(".DB %10001111")
-            BSRLE_Compression(mapDataFile, incMapFile, binMapSize)
-            print("File compressed from " .. binMapSize .. " bytes to " .. compMapSize .. " bytes.")
+            incMapFile:write(".DB " .. header)
+            BSRLE_Compression(mapBinary, incMapFile, #mapBinary)
+            print("File compressed from " .. #mapBinary .. " bytes to " .. compMapSize .. " bytes.")
         end
 
         incMapFile:close()
