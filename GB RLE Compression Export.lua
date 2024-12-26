@@ -91,7 +91,7 @@ local function BSRLE_Compression(origBinFile, incFile, origSize)
     incFile:write(".DW ")
 
     for i = 1, origSize do
-        local currentByte = string.byte(origBinFile, i)
+        local currentByte = string.byte(origBinFile, i + 1)
         if not currentByte or currentByte ~= prevByte then
             if runsPerLine >= 16 then
                 incFile:write("\n.DW ")
