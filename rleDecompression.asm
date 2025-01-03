@@ -25,9 +25,9 @@ TileAndMapHandler:
 	jp z, @WriteTallOrScreen
 ;Otherwise we are writing TILEs, or a FULL/WIDE background map, which are written in the same way
 	@WriteFullOrWideOrTiles:
-		push af
+		;push af
 	--:
-		pop af
+		;pop af
 		inc de
 	;Start by loading in our data byte
 		ld a, (de)
@@ -167,43 +167,4 @@ TileAndMapHandler:
 				ret
 			;End
 		;End
-	ret
-
-;==============================================================
-; Copies memory for a single LCD screen of data
-;==============================================================
-;
-;Parameters: DE = Source, HL = Destination, BC = Length
-;Returns: None
-;Affects: A, HL, DE, BC
-CopySingleScreenTileMap:
-	ld a, (de)
-	ld (hli), a
-	inc de
-;Check if we are at the edge of the GB's display
-	ld a, l
-	and LCD_WIDTH
-	cp LCD_WIDTH
-	call z, @DrawNextLine
-;Proceed to next tile (if there is one)
-	dec bc
-	ld a, b
-	or a, c
-	jp nz, CopySingleScreenTileMap
-
-	ret
-@DrawNextLine:
-;Save registers
-	push de
-	;push hl
-	;pop de
-	ld a, l
-	ld e, a
-	ld a, h
-	ld d, a
-;Update drawing position
-	ld hl,  LCD_NEXT_LINE
-	add hl, de
-;Return Register
-	pop de
 	ret

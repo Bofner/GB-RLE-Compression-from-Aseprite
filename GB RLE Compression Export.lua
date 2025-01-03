@@ -316,12 +316,12 @@ if data.ok then
         return
     end
     if compFileSize > #tileBinary then
-        incFile:write(".DB %11001111")
+        incFile:write(".DB %11001111\n")
         no_compression(tileBinary, incFile, #tileBinary)
         print("File compression not efficient. Raw data with appropriate header copied instead.")
     else
-        incFile:write(".DB %10001111")
-        incFile:write(";Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).")
+        incFile:write(".DB %10001111\n")
+        incFile:write(";Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).\n")
         BSRLE_Compression(tileBinary, incFile, #tileBinary)
         print("File compressed from " .. #tileBinary .. " bytes to " .. compFileSize .. " bytes.")
     end
