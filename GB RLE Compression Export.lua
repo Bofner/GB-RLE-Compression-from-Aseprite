@@ -168,7 +168,7 @@ end
 local spriteLookup = {}
 local lastLookupId = 0
 
-local function exportFrame(useLookup, frm, binaryValueNotPointer)
+local function exportFrame(useLookup, frm, binaryValueNotPointer, tallSprites)
     if frm == nil then
         frm = 1
     end
@@ -178,37 +178,69 @@ local function exportFrame(useLookup, frm, binaryValueNotPointer)
 
     local result = {}
 
-
-    for y = 0, sprite.height-1, 8 do
-        local row = {}
+    if tallSprites then
         for x = 0, sprite.width-1, 8 do
-            local data = getTileData(img, x, y)
-            local id = 0
-            if useLookup then
-                id = spriteLookup[data]
-                if id == nil then
+            local column = {}
+            for y = 0, sprite.height-1, 8 do
+                local data = getTileData(img, x, y)
+                local id = 0
+                if useLookup then
+                    id = spriteLookup[data]
+                    if id == nil then
+                        id = lastLookupId + 1
+                        lastLookupId = id
+    
+                        spriteLookup[data] = id
+                    else
+                        data = nil
+                    end 
+                else
                     id = lastLookupId + 1
                     lastLookupId = id
-
-                    spriteLookup[data] = id
-                else
-                    data = nil
-                end 
-            else
-                id = lastLookupId + 1
-                lastLookupId = id
-            end
-            table.insert(row, id)
-            if data ~= nil then
-                if binaryValueNotPointer.aBinaryValue ~= nil then
-                    binaryValueNotPointer.aBinaryValue = binaryValueNotPointer.aBinaryValue .. data
-                else
-                    binaryValueNotPointer.aBinaryValue = data
                 end
-
+                table.insert(column, id)
+                if data ~= nil then
+                    if binaryValueNotPointer.aBinaryValue ~= nil then
+                        binaryValueNotPointer.aBinaryValue = binaryValueNotPointer.aBinaryValue .. data
+                    else
+                        binaryValueNotPointer.aBinaryValue = data
+                    end
+                end
             end
+            table.insert(result, column)
         end
-        table.insert(result, row)
+    else
+        for y = 0, sprite.height-1, 8 do
+            local row = {}
+            for x = 0, sprite.width-1, 8 do
+                local data = getTileData(img, x, y)
+                local id = 0
+                if useLookup then
+                    id = spriteLookup[data]
+                    if id == nil then
+                        id = lastLookupId + 1
+                        lastLookupId = id
+
+                        spriteLookup[data] = id
+                    else
+                        data = nil
+                    end 
+                else
+                    id = lastLookupId + 1
+                    lastLookupId = id
+                end
+                table.insert(row, id)
+                if data ~= nil then
+                    if binaryValueNotPointer.aBinaryValue ~= nil then
+                        binaryValueNotPointer.aBinaryValue = binaryValueNotPointer.aBinaryValue .. data
+                    else
+                        binaryValueNotPointer.aBinaryValue = data
+                    end
+
+                end
+            end
+            table.insert(result, row)
+        end
     end
 
     return result
@@ -254,6 +286,9 @@ dlg:check{ id="removeDuplicates",
 dlg:check{ id="exportMap",
            text="Export map data",
            selected=true}
+dlg:check{ id="tallSprites",
+            text="Export as 8x16",
+            selected=false}
 
 dlg:button{ id="ok", text="OK" }
 dlg:button{ id="cancel", text="Cancel" }
@@ -267,10 +302,10 @@ if data.ok then
     --Write our binary tile data and set up the map
     local mapData = {}
     if data.onlyCurrentFrame then
-        table.insert(mapData, exportFrame(data.removeDuplicates, app.activeFrame, notPointer))
+        table.insert(mapData, exportFrame(data.removeDuplicates, app.activeFrame, notPointer, data.tallSprites))
     else
         for i = 1,#sprite.frames do
-            table.insert(mapData, exportFrame(data.removeDuplicates, i, tileBinary))
+            --table.insert(mapData, exportFrame(data.removeDuplicates, i, tileBinary))
         end
     end
     --Load our binary tile data
