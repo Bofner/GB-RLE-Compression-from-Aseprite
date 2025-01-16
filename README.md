@@ -38,6 +38,19 @@
  タイルとマップファイルを書き出せます。書き出すファイルの名前選べます。スプライトを書き出す場合、8x16のフォーマットできます。
 
  ![](https://github.com/Bofner/GB-RLE-Compression-from-Aseprite/blob/main/images/export.jpg)
+
+
+Here it is displayed on a Game Boy Pocket
+
+ゲームボーイポケットの見本
+
+ ![](https://github.com/Bofner/GB-RLE-Compression-from-Aseprite/blob/main/images/DMG.jpeg)
+
+ And on a Super Game Boy
+
+ スーパーゲームボーイの見本
+
+  ![](https://github.com/Bofner/GB-RLE-Compression-from-Aseprite/blob/main/images/DMG.jpeg)
   
 
 ## Notes:
