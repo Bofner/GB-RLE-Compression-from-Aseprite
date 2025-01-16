@@ -25,7 +25,7 @@
  
  最初にAsepriteで4色インデクスの写真は必要です。何でもの4色は大丈夫です。白黒じゃなくてもいいです。
  
- ![](https://github.com/Bofner/GB-RLE-Compression-from-Aseprite/blob/main/images/export.jpg)
+ ![](https://github.com/Bofner/GB-RLE-Compression-from-Aseprite/blob/main/images/bg.jpg)
 
  Next, select the script.
  
