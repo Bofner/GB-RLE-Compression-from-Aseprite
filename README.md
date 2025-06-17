@@ -50,7 +50,7 @@ Here it is displayed on a Game Boy Pocket
 
  スーパーゲームボーイの見本
 
-  ![](https://github.com/Bofner/GB-RLE-Compression-from-Aseprite/blob/main/images/DMG.jpeg)
+  ![](https://github.com/Bofner/GB-RLE-Compression-from-Aseprite/blob/main/images/SGB.jpg)
   
 
 ## Notes:
