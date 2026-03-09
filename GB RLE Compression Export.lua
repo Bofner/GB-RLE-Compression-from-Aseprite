@@ -355,12 +355,12 @@ if data.ok then
     if compFileSize > #tileBinary then
         incFile:write(".DB %11001111\n")
         no_compression(tileBinary, incFile, #tileBinary)
-        print("File compression not efficient. File written as", #tileBinary, string.format(" ( $%04X", #tileBinary),  ") bytes of raw data with appropriate header instead.")
+        print("File compression not efficient. File written as " .. #tileBinary .. string.format(" ($%04X", #tileBinary)..  ") bytes of raw data with appropriate header instead.")
     else
         incFile:write(".DB %10001111\n")
         incFile:write(";Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).\n")
         BSRLE_Compression(tileBinary, incFile, #tileBinary)
-        print("File compressed from " .. #tileBinary .. " bytes to " .. compFileSize .. " bytes.")
+        print("File compressed from " .. #tileBinary .. string.format(" ($%04X", #tileBinary).. " bytes to " .. compFileSize .. string.format(" ($%04X", compFileSize).. " bytes.")
     end
 
     incFile:close()
@@ -399,13 +399,13 @@ if data.ok then
         if compMapSize > #mapBinary then
             incMapFile:write(".DB %01001111")
             no_compression(mapBinary, incMapFile, #mapBinary)
-            print("File compression not efficient. File written as", #tileBinary, string.format(" ( $%04X", #tileBinary),  ") bytes of raw data with appropriate header instead.")
+            print("File compression not efficient. File written as " .. #mapBinary .. string.format(" ($%04X", #mapBinary)..  ") bytes of raw data with appropriate header instead.")
         else
 
             incMapFile:write(".DB " .. header)
             incMapFile:write("\n;Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).\n")
             BSRLE_Compression(mapBinary, incMapFile, #mapBinary)
-            print("File compressed from " .. #mapBinary .. " bytes to " .. compMapSize .. " bytes.")
+            print("File compressed from " .. #mapBinary .. string.format(" ($%04X", #mapBinary).. ") bytes to " .. compMapSize .. string.format(" ($%04X", compMapSize).. ") bytes.")
         end
 
         incMapFile:close()
