@@ -289,6 +289,7 @@ dlg:check{ id="exportMap",
 dlg:check{ id="tallSprites",
             text="Export as 8x16",
             selected=false}
+dlg:number{ id="tileOffsetValue", label="Tile Offset (Decimal)", text="0", value=0, min = 0, max=255}
 
 dlg:button{ id="ok", text="OK" }
 dlg:button{ id="cancel", text="Cancel" }
@@ -297,6 +298,7 @@ local data = dlg.data
 local notPointer = {aBinaryValue}
 local tileBinary
 local mapBinary
+local tileOffset = data.tileOffsetValue
 if data.ok then
 
     --Write our binary tile data and set up the map
@@ -322,10 +324,10 @@ if data.ok then
                 for y = 1, #frameMap[1] do       
                     if mapBinary ~= nil then
                         --Concatenate the map data
-                        mapBinary = mapBinary .. string.char(frameMap[x][y] - 1)
+                        mapBinary = mapBinary .. string.char((frameMap[x][y] - 1) + tileOffset)
                     else
                         --The start of the binary  
-                        mapBinary = string.char(frameMap[x][y] - 1)
+                        mapBinary = string.char((frameMap[x][y] - 1) + tileOffset)
                     end
                 end
             end
@@ -353,7 +355,7 @@ if data.ok then
     if compFileSize > #tileBinary then
         incFile:write(".DB %11001111\n")
         no_compression(tileBinary, incFile, #tileBinary)
-        print("File compression not efficient. Raw data with appropriate header copied instead.")
+        print("File compression not efficient. File written as", #tileBinary, string.format(" ( $%04X", #tileBinary),  ") bytes of raw data with appropriate header instead.")
     else
         incFile:write(".DB %10001111\n")
         incFile:write(";Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).\n")
@@ -397,7 +399,7 @@ if data.ok then
         if compMapSize > #mapBinary then
             incMapFile:write(".DB %01001111")
             no_compression(mapBinary, incMapFile, #mapBinary)
-            print("File compression not efficient. Raw data with appropriate header copied instead.")
+            print("File compression not efficient. File written as", #tileBinary, string.format(" ( $%04X", #tileBinary),  ") bytes of raw data with appropriate header instead.")
         else
 
             incMapFile:write(".DB " .. header)
