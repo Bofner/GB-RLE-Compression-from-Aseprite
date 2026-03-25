@@ -1,6 +1,10 @@
 ; ==============================================================
 ;  Handles decompressing and writing tiles and maps
 ; ==============================================================
+; LCD Display Width in tiles
+; .DEF LCD_WIDTH      $14
+; LCD distance to start of next line
+; .DEF LCD_NEXT_LINE  $0C
 ; 
 ; Parameters: DE = Source, HL = (TILE_VRAM_8000, TILE_VRAM_8800, TILE_VRAM_9000)
 ; 							   (MAP_VRAM_9800,                  MAP_VRAM_9C00 )

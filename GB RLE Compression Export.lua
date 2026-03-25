@@ -8,6 +8,8 @@ local TILE = 1
 local MAP = 0
 local spriteFullPath
 local spriteFileName
+local BYTE 
+local WORD 
 
 -- Check constrains
 if sprite == nil then
@@ -88,13 +90,13 @@ local function BSRLE_Compression(origBinFile, incFile, origSize)
     local runsPerLine = 0
     local runLength = 1
     local prevByte = string.byte(origBinFile, 1)
-    incFile:write(".DW ")
+    incFile:write(WORD .." ")
 
     for i = 1, origSize do
         local currentByte = string.byte(origBinFile, i + 1)
         if not currentByte or currentByte ~= prevByte then
             if runsPerLine >= 16 then
-                incFile:write("\n.DW ")
+                incFile:write("\n" .. WORD .. " ")
                 runsPerLine = 0
             end
             incFile:write(string.format("$%02X", runLength))
@@ -112,22 +114,22 @@ local function BSRLE_Compression(origBinFile, incFile, origSize)
         end
     end
 
-    incFile:write("\n;Terminator word is $0000 since we can't have a run length of length 0.\n")
-    incFile:write(".DW $0000\n")
+    incFile:write("\n; Terminator word is $0000 since we can't have a run length of length 0.\n")
+    incFile:write(WORD .. " $0000\n")
     return true
 end
 
 -- Handle uncompressed data
 local function no_compression(origBinary, incFile, origSize)
-    incFile:write("\n;Size of uncompressed tile data:\n")
-    incFile:write(string.format(".DW $%04X\n", origSize))
-    incFile:write(";Raw tile data \n.DB ")
+    incFile:write("\n; Size of uncompressed tile data:\n")
+    incFile:write(string.format(WORD .. " $%04X\n", origSize))
+    incFile:write("; Raw tile data \n" .. BYTE .. " ")
 
     local bytesPerLine = 0
     for i = 1, origSize do
         local currentByte = string.byte(origBinary, i)
         if bytesPerLine >= 16 then
-            incFile:write("\n.DB ")
+            incFile:write("\n" .. BYTE .. " ")
             bytesPerLine = 0
         end
         incFile:write(string.format("$%02X ", currentByte))
@@ -290,6 +292,11 @@ dlg:check{ id="tallSprites",
             text="Export as 8x16",
             selected=false}
 dlg:number{ id="tileOffsetValue", label="Tile Offset (Decimal)", text="0", value=0, min = 0, max=255}
+dlg:combobox{ id="exportType",
+		  	  label="Export Type",
+		  	  option="WLA-DX",
+		  	  options={"WLA-DX","RGBDS"},
+			}
 
 dlg:button{ id="ok", text="OK" }
 dlg:button{ id="cancel", text="Cancel" }
@@ -300,7 +307,13 @@ local tileBinary
 local mapBinary
 local tileOffset = data.tileOffsetValue
 if data.ok then
-
+    if data.exportType == "RGBDS" then
+        BYTE = "DB"
+        WORD = "DW"
+    else
+        BYTE = ".DB"
+        WORD = ".DW"
+    end
     --Write our binary tile data and set up the map
     local mapData = {}
     if data.onlyCurrentFrame then
@@ -337,30 +350,30 @@ if data.ok then
 
     --Take our binary tile data and try to compress them
     local incFile = io.open(data.exportFile, "w")
-    incFile:write(";Header byte follows this format:\n")
-    incFile:write(";7:     1 = TILE, 0 = MAP\n")
-    incFile:write(";6:     1 = Uncompressed\n")
-    incFile:write(";5 & 4: 00 = SCRN, 01 = TALL\n")
-    incFile:write(";       10 = WIDE, 11 = FULL\n")
-    incFile:write(";0-3: Unused but set to 1\n")
+    incFile:write("; Header byte follows this format:\n")
+    incFile:write("; 7:     1 = TILE, 0 = MAP\n")
+    incFile:write("; 6:     1 = Uncompressed\n")
+    incFile:write("; 5 & 4: 00 = SCRN, 01 = TALL\n")
+    incFile:write(";        10 = WIDE, 11 = FULL\n")
+    incFile:write("; 0-3: Unused but set to 1\n")
 
     --Check if compression is efficient
     --local binFileSize = get_file_size(tileData)
     local compFileSize = calc_comp_size(tileBinary, #tileBinary)
     if not compFileSize then
-        print("Error calculating compressed size.")
+        app.alert("Error calculating compressed size.")
         incFile:close()
         return
     end
     if compFileSize > #tileBinary then
-        incFile:write(".DB %11001111\n")
+        incFile:write(BYTE .. " %11001111\n")
         no_compression(tileBinary, incFile, #tileBinary)
-        print("File compression not efficient. File written as " .. #tileBinary .. string.format(" ($%04X", #tileBinary)..  ") bytes of raw data with appropriate header instead.")
+        app.alert("File compression not efficient. File written as " .. #tileBinary .. string.format(" ($%04X", #tileBinary)..  ") bytes of raw data with appropriate header instead.")
     else
-        incFile:write(".DB %10001111\n")
-        incFile:write(";Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).\n")
+        incFile:write(BYTE .. " %10001111\n")
+        incFile:write("; Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).\n")
         BSRLE_Compression(tileBinary, incFile, #tileBinary)
-        print("File compressed from " .. #tileBinary .. string.format(" ($%04X", #tileBinary).. " bytes to " .. compFileSize .. string.format(" ($%04X", compFileSize).. " bytes.")
+        app.alert("File compressed from " .. #tileBinary .. string.format(" ($%04X", #tileBinary).. " bytes to " .. compFileSize .. string.format(" ($%04X", compFileSize).. " bytes.")
     end
 
     incFile:close()
@@ -389,23 +402,23 @@ if data.ok then
         end
         --Take our binary map data and try to compress them
         local incMapFile = io.open(data.mapFile, "w")
-        incMapFile:write(";Header byte follows this format:\n")
-        incMapFile:write(";7:     1 = TILE, 0 = MAP\n")
-        incMapFile:write(";6:     1 = Uncompressed\n")
-        incMapFile:write(";5 & 4: 00 = SCRN, 01 = TALL\n")
-        incMapFile:write(";       10 = WIDE, 11 = FULL\n")
-        incMapFile:write(";0-3: Unused but set to 1\n")
+        incMapFile:write("; Header byte follows this format:\n")
+        incMapFile:write("; 7:     1 = TILE, 0 = MAP\n")
+        incMapFile:write("; 6:     1 = Uncompressed\n")
+        incMapFile:write("; 5 & 4: 00 = SCRN, 01 = TALL\n")
+        incMapFile:write(";        10 = WIDE, 11 = FULL\n")
+        incMapFile:write("; 0-3: Unused but set to 1\n")
 
         if compMapSize > #mapBinary then
-            incMapFile:write(".DB %01001111")
+            incMapFile:write(BYTE .. " " .. "%01001111")
             no_compression(mapBinary, incMapFile, #mapBinary)
-            print("File compression not efficient. File written as " .. #mapBinary .. string.format(" ($%04X", #mapBinary)..  ") bytes of raw data with appropriate header instead.")
+            app.alert("File compression not efficient. File written as " .. #mapBinary .. string.format(" ($%04X", #mapBinary)..  ") bytes of raw data with appropriate header instead.")
         else
 
-            incMapFile:write(".DB " .. header)
-            incMapFile:write("\n;Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).\n")
+            incMapFile:write(BYTE .. " " .. header)
+            incMapFile:write("\n; Compressed tile data in the form $RunLength + $TileID written as a word ($RLID).\n")
             BSRLE_Compression(mapBinary, incMapFile, #mapBinary)
-            print("File compressed from " .. #mapBinary .. string.format(" ($%04X", #mapBinary).. ") bytes to " .. compMapSize .. string.format(" ($%04X", compMapSize).. ") bytes.")
+            app.alert("File compressed from " .. #mapBinary .. string.format(" ($%04X", #mapBinary).. ") bytes to " .. compMapSize .. string.format(" ($%04X", compMapSize).. ") bytes.")
         end
 
         incMapFile:close()

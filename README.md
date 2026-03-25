@@ -56,9 +56,11 @@ Here it is displayed on a Game Boy Pocket
 ## Notes:
 ## ノート：
  
- I use WLA-DX, so that's's the way it exports for now. Perhaps I'll update it for RGBDS in the future.
+ ~~I use WLA-DX, so that's's the way it exports for now. Perhaps I'll update it for RGBDS in the future.~~
+I've added support for RGBDS, though I don't use it, so it's untested... let me know if it works!
  
- 僕はWLA-DXのアセンブラーを使いますから.incファウルのフォーマットはWLA-DXのフォーマットです。いつもRGBDSの書き出すフォーマットのサポートを付け足すかもしれません。
+ ~~僕はWLA-DXのアセンブラーを使いますから.incファウルのフォーマットはWLA-DXのフォーマットです。いつもRGBDSの書き出すフォーマットのサポートを付け足すかもしれません。~~
+ RGBDSのサポートを追加しました！まだ確認しなかったけど。。。
 
  I've also included the hardware.inc file from RGBDS, but updated for WLA-DX.
  
